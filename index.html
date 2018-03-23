@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>IntelligentDiagnosis</title>
+    <link rel="stylesheet" type="text/css" href="build/rappid/rappid.css">
+
+    <style type="text/css">
+        #container {
+            height: 602px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #0070ff;
+            position: relative;
+        }
+
+        #paper {
+            width: 800px;
+            height: 600px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #0070ff;
+            display: inline-block;
+            position: absolute;
+            left: 201px;
+        }
+
+        #stencil {
+            width: 200px;
+            height: 300px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #0070ff;
+            display: inline-block;
+            position: absolute;
+            top: 0;
+        }
+
+        #navigator {
+            width: 200px;
+            height: 299px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #0070ff;
+            display: inline-block;
+            position: absolute;
+            top: 301px;
+        }
+
+        /*辅助线样式*/
+        #paper .snapline.horizontal {
+            border-bottom: 1px solid #ff9300;
+            /*box-shadow: 0 0 1px #404040;*/
+        }
+
+        #paper .snapline.vertical {
+            border-right: 1px solid #0088ff;
+            /*box-shadow: 0 0 1px #404040;*/
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <div id="stencil"></div>
+    <div id="paper"></div>
+    <div id="navigator"></div>
+</div>
+
+<script type="text/javascript" src="build/jquery/jquery.js"></script>
+<script type="text/javascript" src="build/lodash/lodash.js"></script>
+<script type="text/javascript" src="build/backbone/backbone.js"></script>
+
+<script type="text/javascript" src="build/rappid/rappid.js"></script>
+
+<script type="text/javascript">
+    var _paper = $('#paper');
+    var _stencil = $('#stencil');
+    var _navigator = $('#navigator');
+
+    //画布
+    var graph = new joint.dia.Graph;
+    var paper = new joint.dia.Paper({
+        /*el: _paper,*/
+        width: 800,
+        height: 600,
+        gridSize: 8,
+        drawGrid: {
+            name: 'doubleMesh',
+            args: [
+                {color: '#dcdcdc', thickness: 1},
+                {color: '#a0a0a0', scaleFactor: 10, thickness: 1}
+            ]
+        },
+        model: graph,
+        defaultLink: new joint.dia.Link({
+            attrs: {
+                '.connection': {stroke: 'blue'},
+                '.marker-source': {fill: 'yellow', d: 'M 2 5 A 4 4 0 0 0 10 5 A 4 4 0 0 0 2 5'},
+                '.marker-target': {fill: 'red', d: 'M 10 1 L 0 5 L 10 9 z'}
+            }
+        }),
+        defaultRouter: {
+            name: 'manhattan'
+        }
+    });
+
+    //工具板
+    var stencil = new joint.ui.Stencil({
+        graph: graph,
+        paper: paper,
+        width: 200,
+        height: 200,
+        groups: {
+            simple: {
+                label: 'Simple',
+                index: 1,
+                closed: false
+            },
+            text: {
+                label: 'Text',
+                index: 2,
+                closed: true
+            }
+        },
+        search: {
+            '*': ['attrs/text/text', 'description']
+        }
+    });
+    _stencil.append(stencil.render().el);
+
+    //工具板内容
+    var r = new joint.shapes.basic.Rect({
+        position: {
+            x: 10,
+            y: 10
+        },
+        size: {
+            width: 70,
+            height: 40
+        },
+        attrs: {
+            rect: {
+                fill: '#d6ffc8',
+                stroke: '#6dff00',
+                'stroke-width': 4
+            },
+            text: {
+                text: 'rect',
+                fill: '#757575'
+            }
+        },
+        description: '矩形'
+    });
+    var c = new joint.shapes.basic.Circle({
+        position: {
+            x: 100,
+            y: 10
+        },
+        size: {
+            width: 70,
+            height: 40
+        },
+        attrs: {
+            circle: {
+                fill: '#ffb8c9',
+                stroke: '#ff0061',
+                'stroke-width': 4
+            },
+            text: {
+                text: 'ellipse',
+                fill: '#757575'
+            }
+        },
+        description: '圆'
+    });
+    var t = new joint.shapes.basic.Text({
+        position: {
+            x: 10,
+            y: 10
+        },
+        size: {
+            width: 50,
+            height: 30
+        },
+        attrs: {
+            text: {
+                text: 'Text',
+                'font-weight': 'bold'
+            }
+        },
+        description: '文字'
+    });
+    stencil.load([r, c], 'simple');
+    stencil.load([t], 'text');
+    stencil.on('filter', function (graph, group) {
+        console.log(graph, group);
+    });
+
+    //辅助线
+    var snaplines = new joint.ui.Snaplines({
+        paper: paper
+    });
+    snaplines.startListening();
+
+    //选中监听
+    paper.on('cell:pointerup', function (cellView, evt) {
+        if (cellView.model instanceof joint.dia.Link) return;
+
+        if (!(evt.ctrlKey || evt.metaKey)) {
+            var halo = new joint.ui.Halo({
+                cellView: cellView
+            });
+            halo.render();
+        }
+    });
+
+    //元素选择
+    var selection = new joint.ui.SelectionView({paper: paper});
+    //拉框选择
+    paper.on('blank:pointerdown', selection.startSelecting);
+    //点选
+    paper.on('element:pointerup', function (elementView, evt) {
+        if (evt.ctrlKey || evt.metaKey) {
+            selection.collection.add(elementView.model);
+        }
+    });
+    selection.on('selection-box:pointerdown', function (elementView, evt) {
+        if (evt.ctrlKey || evt.metaKey) {
+            selection.collection.remove(elementView.model);
+        }
+    });
+
+    //画布滚动条
+    var paperScroller = new joint.ui.PaperScroller({
+        autoResizePaper: true,
+        padding: 60,
+        paper: paper
+    });
+    //拖动画布
+    /*paper.on('blank:pointerdown', paperScroller.startPanning);*/
+    //画框大小
+    paperScroller.$el.css({
+        width: 800,
+        height: 600
+    });
+    //加入画框
+    _paper.append(paperScroller.render().el);
+    paperScroller.center();
+
+    //导航
+    var nav = new joint.ui.Navigator({
+        paperScroller: paperScroller,
+        width: 198,
+        height: 299,
+        padding: 6,
+        zoomOptions: {max: 2, min: 0.2}
+    });
+    _navigator.append(nav.render().el);
+</script>
+</body>
+</html>
