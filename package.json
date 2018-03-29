@@ -1,0 +1,7 @@
+{
+  "name": "IntelligentDiagnosis-rappid",
+  "version": "0.0.1",
+  "dependencies": {
+    "mysql": "latest"
+  }
+}

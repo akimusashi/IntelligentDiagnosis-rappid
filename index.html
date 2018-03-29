@@ -52,13 +52,21 @@
             border-bottom: 1px solid #ff9300;
             /*box-shadow: 0 0 1px #404040;*/
         }
+
         #paper .snapline.vertical {
             border-right: 1px solid #0088ff;
             /*box-shadow: 0 0 1px #404040;*/
         }
+
+        .controller {
+            margin: 6px;
+        }
     </style>
 </head>
 <body>
+<div class="controller">
+    <button type="button" id="saveGraph">SaveGraph</button>
+</div>
 <div id="container">
     <div id="stencil"></div>
     <div id="paper"></div>
@@ -255,6 +263,12 @@
         zoomOptions: {max: 2, min: 0.2}
     });
     _navigator.append(nav.render().el);
+
+    $('#saveGraph').click(function () {
+        var graphString = JSON.stringify(graph);
+        var graphJSON = JSON.parse(graphString);
+        console.log(graphJSON);
+    });
 </script>
 </body>
 </html>
