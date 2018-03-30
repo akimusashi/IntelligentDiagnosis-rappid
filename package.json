@@ -2,6 +2,11 @@
   "name": "IntelligentDiagnosis-rappid",
   "version": "0.0.1",
   "dependencies": {
-    "mysql": "latest"
+    "db": "^1.0.6",
+    "model": "^6.0.1",
+    "mysql": "latest",
+    "mysql-connection": "^1.0.2",
+    "nodejs-websocket": "^1.7.1",
+    "utils": "^0.3.1"
   }
 }

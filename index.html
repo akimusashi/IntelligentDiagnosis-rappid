@@ -61,11 +61,19 @@
         .controller {
             margin: 6px;
         }
+
+        .form-box {
+            width: 180px;
+        }
     </style>
 </head>
 <body>
 <div class="controller">
+    <input class="form-box" id="modelName" title="model name"/>
     <button type="button" id="saveGraph">SaveGraph</button>
+    <select class="form-box" id="selectGraph" title="select model"></select>
+    <button type="button" id="updateGraph">UpdateGraph</button>
+    <button type="button" id="clearGraph">ClearGraph</button>
 </div>
 <div id="container">
     <div id="stencil"></div>
@@ -264,11 +272,80 @@
     });
     _navigator.append(nav.render().el);
 
-    $('#saveGraph').click(function () {
-        var graphString = JSON.stringify(graph);
-        var graphJSON = JSON.parse(graphString);
-        console.log(graphJSON);
-    });
+    (function () {
+        function appendOption(model_id, model_name) {
+            $('#selectGraph').append('<option value="' + model_id + '">' + model_name + '</option>');
+        }
+
+        if (window.WebSocket) {
+            var ws = new WebSocket('ws://127.0.0.1:8080');
+            var modelName;
+            ws.onopen = function () {
+                console.log('连接服务器成功');
+                $('#saveGraph').click(function () {
+                    modelName = $.trim($('#modelName').val());
+                    if (modelName !== '') {
+                        var graphString = JSON.stringify(graph);
+                        var params = 'add&$&' + modelName + '&$&' + graphString;
+                        ws.send(params);
+                    } else {
+                        alert('Please enter your model name!');
+                    }
+                });
+
+                ws.send('search');
+
+                $('#selectGraph').change(function () {
+                    var modelId = $(this).val();
+                    if (modelId !== '0') {
+                        var params = 'selectById&$&' + modelId;
+                        ws.send(params);
+                    }
+                });
+
+                $('#updateGraph').click(function () {
+                    var modelId = $('#selectGraph').val();
+                    if (modelId !== '0') {
+                        var graphString = JSON.stringify(graph);
+                        var params = 'update&$&' + modelId + '&$&' + graphString;
+                        ws.send(params);
+                    } else {
+                        alert('Please select a model!');
+                    }
+                });
+
+                $('#clearGraph').click(function () {
+                    graph.clear();
+                });
+            };
+            ws.onclose = function () {
+                console.log('服务器关闭');
+            };
+            ws.onerror = function () {
+                console.log('连接出错');
+            };
+            ws.onmessage = function (msg) {
+                console.log('获取服务器信息');
+
+                msg = JSON.parse(msg.data);
+
+                if (msg.type === 'model_list') {
+                    var array = msg.data;
+                    appendOption(0, 'select model');
+                    for (var i = 0, len = array.length; i < len; i++) {
+                        appendOption(array[i].id, array[i].model_name);
+                    }
+                } else if (msg.type === 'model_id') {
+                    var model_graph = msg.data[0].model_graph;
+                    graph.fromJSON(JSON.parse(model_graph));
+                } else if (msg.type === 'model_add') {
+                    if (msg.data.affectedRows === 1) {
+                        appendOption(msg.data.insertId, modelName);
+                    }
+                }
+            }
+        }
+    })();
 </script>
 </body>
 </html>
