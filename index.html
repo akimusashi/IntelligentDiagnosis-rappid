@@ -200,36 +200,19 @@
         attrs: {
             path: {
                 d: 'M 0 0 L 100 0 50 87 z',
-                fill: '#aaff51',
-                stroke: '#ff0061',
+                fill: '#e2c8ff',
+                stroke: '#9300ff',
                 'stroke-width': 4
             },
             text: {
-                text: 'triangle',
+                text: 'tri',
                 fill: '#757575',
                 'y-alignment': 'middle',
-                "ref-y": .2,
+                "ref-y": .4,
                 "ref-dy": null
             }
         },
         description: '多边形'
-    });
-    var t = new joint.shapes.basic.Text({
-        position: {
-            x: 10,
-            y: 10
-        },
-        size: {
-            width: 50,
-            height: 30
-        },
-        attrs: {
-            text: {
-                text: 'Text',
-                'font-weight': 'bold'
-            }
-        },
-        description: '文字'
     });
     stencil.load([r, c], 'simple');
     stencil.load([triangle], 'other');
