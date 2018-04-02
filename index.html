@@ -127,12 +127,12 @@
         height: 200,
         groups: {
             simple: {
-                label: 'Simple',
+                label: 'simple',
                 index: 1,
                 closed: false
             },
-            text: {
-                label: 'Text',
+            other: {
+                label: 'other',
                 index: 2,
                 closed: true
             }
@@ -188,6 +188,32 @@
         },
         description: '圆'
     });
+    var triangle = new joint.shapes.basic.Path({
+        position: {
+            x: 100,
+            y: 10
+        },
+        size: {
+            width: 70,
+            height: 60
+        },
+        attrs: {
+            path: {
+                d: 'M 0 0 L 100 0 50 87 z',
+                fill: '#aaff51',
+                stroke: '#ff0061',
+                'stroke-width': 4
+            },
+            text: {
+                text: 'triangle',
+                fill: '#757575',
+                'y-alignment': 'middle',
+                "ref-y": .2,
+                "ref-dy": null
+            }
+        },
+        description: '多边形'
+    });
     var t = new joint.shapes.basic.Text({
         position: {
             x: 10,
@@ -206,7 +232,7 @@
         description: '文字'
     });
     stencil.load([r, c], 'simple');
-    stencil.load([t], 'text');
+    stencil.load([triangle], 'other');
     stencil.on('filter', function (graph, group) {
         console.log(graph, group);
     });
@@ -221,10 +247,19 @@
     paper.on('cell:pointerup', function (cellView, evt) {
         if (cellView.model instanceof joint.dia.Link) return;
 
+        var data = cellView.model.attributes.data;
+        if (data) {
+            data = JSON.stringify(data).replace(/,["']/g, ' ').replace(/["']:/g, ': ').replace(/{["']|}/g, '');
+        }
+
         if (!(evt.ctrlKey || evt.metaKey)) {
             var halo = new joint.ui.Halo({
-                cellView: cellView
+                cellView: cellView,
+                boxContent: data
             });
+            halo.removeHandle('rotate').removeHandle('clone').removeHandle('fork');
+            halo.changeHandle('unlink', {position: 'sw'});
+            halo.changeHandle('link', {position: 'ne'});
             halo.render();
         }
     });
@@ -271,6 +306,15 @@
         zoomOptions: {max: 2, min: 0.2}
     });
     _navigator.append(nav.render().el);
+
+    graph.on('add', function (cell) {
+        cell.attributes.data = {
+            apple: 1,
+            banana: 2,
+            cat: 3,
+            dog: 4
+        };
+    });
 
     (function () {
         function appendOption(model_id, model_name) {
