@@ -47,6 +47,11 @@
             top: 301px;
         }
 
+        #toolbar {
+            height: 32px;
+            border: 1px solid #0070ff;
+        }
+
         /*辅助线样式*/
         #paper .snapline.horizontal {
             border-bottom: 1px solid #ff9300;
@@ -75,6 +80,7 @@
     <button type="button" id="updateGraph">UpdateGraph</button>
     <button type="button" id="clearGraph">ClearGraph</button>
 </div>
+<div id="toolbar"></div>
 <div id="container">
     <div id="stencil"></div>
     <div id="paper"></div>
@@ -84,6 +90,8 @@
 <script type="text/javascript" src="build/jquery/jquery.js"></script>
 <script type="text/javascript" src="build/lodash/lodash.js"></script>
 <script type="text/javascript" src="build/backbone/backbone.js"></script>
+<script type="text/javascript" src="build/graphlib/graphlib.core.js"></script>
+<script type="text/javascript" src="build/dagre/dagre.core.js"></script>
 
 <script type="text/javascript" src="build/rappid/rappid.js"></script>
 
@@ -91,6 +99,8 @@
     var _paper = $('#paper');
     var _stencil = $('#stencil');
     var _navigator = $('#navigator');
+
+    var _toolbar = $('#toolbar');
 
     //画布
     var graph = new joint.dia.Graph;
@@ -108,6 +118,12 @@
         },
         model: graph,
         defaultLink: new joint.dia.Link({
+            /*router: {
+                name: 'manhattan'
+            },
+            connector: {
+                name: 'rounded'
+            },*/
             attrs: {
                 '.connection': {stroke: 'blue'},
                 '.marker-source': {fill: 'yellow', d: 'M 2 5 A 4 4 0 0 0 10 5 A 4 4 0 0 0 2 5'},
@@ -116,6 +132,9 @@
         }),
         defaultRouter: {
             name: 'manhattan'
+        },
+        defaultConnector: {
+            name: 'rounded'
         }
     });
 
@@ -155,6 +174,8 @@
         },
         attrs: {
             rect: {
+                rx: 8,
+                ry: 8,
                 fill: '#d6ffc8',
                 stroke: '#6dff00',
                 'stroke-width': 4
@@ -190,12 +211,12 @@
     });
     var triangle = new joint.shapes.basic.Path({
         position: {
-            x: 100,
+            x: 110,
             y: 10
         },
         size: {
-            width: 70,
-            height: 60
+            width: 50,
+            height: 45
         },
         attrs: {
             path: {
@@ -208,14 +229,40 @@
                 text: 'tri',
                 fill: '#757575',
                 'y-alignment': 'middle',
-                "ref-y": .4,
+                "ref-y": .36,
                 "ref-dy": null
             }
         },
-        description: '多边形'
+        description: '三角形'
+    });
+    var diamond = new joint.shapes.basic.Path({
+        position: {
+            x: 10,
+            y: 10
+        },
+        size: {
+            width: 80,
+            height: 45
+        },
+        attrs: {
+            path: {
+                d: 'M 0 10 L 18 0 36 10 18 20 z',
+                fill: '#c7eeff',
+                stroke: '#0092ff',
+                'stroke-width': 4
+            },
+            text: {
+                text: 'diamond',
+                fill: '#757575',
+                'y-alignment': 'middle',
+                "ref-y": .5,
+                "ref-dy": null
+            }
+        },
+        description: '菱形'
     });
     stencil.load([r, c], 'simple');
-    stencil.load([triangle], 'other');
+    stencil.load([diamond, triangle], 'other');
     stencil.on('filter', function (graph, group) {
         console.log(graph, group);
     });
@@ -249,6 +296,7 @@
 
     //元素选择
     var selection = new joint.ui.SelectionView({paper: paper});
+    selection.removeHandle('rotate');
     //拉框选择
     paper.on('blank:pointerdown', selection.startSelecting);
     //点选
@@ -290,6 +338,7 @@
     });
     _navigator.append(nav.render().el);
 
+    //绑定参数
     graph.on('add', function (cell) {
         cell.attributes.data = {
             apple: 1,
@@ -299,6 +348,68 @@
         };
     });
 
+    //工具条
+    var commandManager = new joint.dia.CommandManager({
+        graph: graph
+    });
+    var toolbar = new joint.ui.Toolbar({
+        tools: ['zoomIn', 'zoomOut', 'zoomToFit', 'zoomSlider', 'undo', 'redo', {
+            type: 'button',
+            name: 'layout',
+            text: 'Layout'
+        }],
+        references: {
+            paperScroller: paperScroller,
+            commandManager: commandManager
+        }
+    });
+    toolbar.on('layout:pointerclick', function () {
+        joint.layout.DirectedGraph.layout(graph, {
+            setLinkVertices: true,
+            rankDir: 'TB',
+            marginX: 60,
+            marginY: 60
+        });
+
+        paperScroller.centerContent();
+    });
+    _toolbar.append(toolbar.render().el);
+
+    //流程追踪
+    paper.on('cell:pointerdown', function (cellView) {
+
+        cellView.model.trigger('signal', cellView.model);
+    });
+    graph.on('signal', function (cell, data) {
+
+        if (cell instanceof joint.dia.Link) {
+
+            var targetCell = graph.getCell(cell.get('target').id);
+
+            paper.findViewByModel(cell).sendToken(V('circle', {r: 7, fill: 'green'}).node, 1000, function () {
+                targetCell.trigger('signal', targetCell);
+            });
+
+        } else {
+
+            flash(cell);
+            var outboundLinks = graph.getConnectedLinks(cell, {outbound: true});
+            _.each(outboundLinks, function (link) {
+                link.trigger('signal', link);
+            });
+        }
+    });
+
+    function flash(cell) {
+
+        var cellView = paper.findViewByModel(cell);
+        cellView.highlight();
+        _.delay(function () {
+            cellView.unhighlight();
+        }, 200);
+    }
+
+    //连接服务器
     (function () {
         function appendOption(model_id, model_name) {
             $('#selectGraph').append('<option value="' + model_id + '">' + model_name + '</option>');

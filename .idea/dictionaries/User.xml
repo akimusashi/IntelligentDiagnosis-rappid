@@ -1,10 +1,14 @@
 <component name="ProjectDictionaryState">
   <dictionary name="User">
     <words>
+      <w>dagre</w>
+      <w>fullscreen</w>
+      <w>graphlib</w>
       <w>onclose</w>
       <w>onerror</w>
       <w>onmessage</w>
       <w>onopen</w>
+      <w>pointerclick</w>
       <w>pointerdown</w>
       <w>pointerup</w>
       <w>scroller</w>
