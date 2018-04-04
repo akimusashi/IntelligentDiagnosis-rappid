@@ -409,6 +409,11 @@
         }, 200);
     }
 
+    //连线编辑
+    paper.on('link:options', function (cellView) {
+        console.log(cellView.model.attributes);
+    });
+
     //连接服务器
     (function () {
         function appendOption(model_id, model_name) {
