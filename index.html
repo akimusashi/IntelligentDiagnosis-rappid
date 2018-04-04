@@ -47,6 +47,17 @@
             top: 301px;
         }
 
+        #inspector {
+            width: 248px;
+            height: 600px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #0070ff;
+            display: inline-block;
+            position: absolute;
+            left: 1002px;
+        }
+
         #toolbar {
             height: 32px;
             border: 1px solid #0070ff;
@@ -85,6 +96,7 @@
     <div id="stencil"></div>
     <div id="paper"></div>
     <div id="navigator"></div>
+    <div id="inspector"></div>
 </div>
 
 <script type="text/javascript" src="build/jquery/jquery.js"></script>
@@ -101,6 +113,7 @@
     var _navigator = $('#navigator');
 
     var _toolbar = $('#toolbar');
+    var _inspector = $('#inspector');
 
     //画布
     var graph = new joint.dia.Graph;
@@ -145,14 +158,29 @@
         width: 200,
         height: 200,
         groups: {
-            simple: {
-                label: 'simple',
+            data: {
+                label: '数据',
                 index: 1,
-                closed: false
+                closed: true
             },
-            other: {
-                label: 'other',
+            feature: {
+                label: '特征处理',
                 index: 2,
+                closed: true
+            },
+            algorithm: {
+                label: '算法',
+                index: 3,
+                closed: true
+            },
+            model: {
+                label: '评估模型',
+                index: 4,
+                closed: true
+            },
+            chart: {
+                label: '图表',
+                index: 5,
                 closed: true
             }
         },
@@ -187,6 +215,77 @@
         },
         description: '矩形'
     });
+    var r1 = r.clone(), r2 = r.clone(), r3 = r.clone(), r4 = r.clone();
+    r1.position(10, 10);
+    r2.position(100, 10);
+    r3.position(10, 60);
+    r4.position(100, 60);
+    var data1 = r1.clone(), data2 = r2.clone(), data3 = r3.clone(), data4 = r4.clone();
+    data1.attr({
+        text: {text: 'data1'}
+    });
+    data2.attr({
+        text: {text: 'data2'}
+    });
+    data3.attr({
+        text: {text: 'data3'}
+    });
+    data4.attr({
+        text: {text: 'data4'}
+    });
+    var feature1 = r1.clone(), feature2 = r2.clone(), feature3 = r3.clone(), feature4 = r4.clone();
+    feature1.attr({
+        text: {text: 'feature1'}
+    });
+    feature2.attr({
+        text: {text: 'feature2'}
+    });
+    feature3.attr({
+        text: {text: 'feature3'}
+    });
+    feature4.attr({
+        text: {text: 'feature4'}
+    });
+    var algorithm1 = r1.clone(), algorithm2 = r2.clone(), algorithm3 = r3.clone(), algorithm4 = r4.clone();
+    algorithm1.attr({
+        text: {text: 'algorithm1'}
+    });
+    algorithm2.attr({
+        text: {text: 'algorithm2'}
+    });
+    algorithm3.attr({
+        text: {text: 'algorithm3'}
+    });
+    algorithm4.attr({
+        text: {text: 'algorithm4'}
+    });
+    var model1 = r1.clone(), model2 = r2.clone(), model3 = r3.clone(), model4 = r4.clone();
+    model1.attr({
+        text: {text: 'model1'}
+    });
+    model2.attr({
+        text: {text: 'model2'}
+    });
+    model3.attr({
+        text: {text: 'model3'}
+    });
+    model4.attr({
+        text: {text: 'model4'}
+    });
+    var chart1 = r1.clone(), chart2 = r2.clone(), chart3 = r3.clone(), chart4 = r4.clone();
+    chart1.attr({
+        text: {text: 'chart1'}
+    });
+    chart2.attr({
+        text: {text: 'chart2'}
+    });
+    chart3.attr({
+        text: {text: 'chart3'}
+    });
+    chart4.attr({
+        text: {text: 'chart4'}
+    });
+
     var c = new joint.shapes.basic.Circle({
         position: {
             x: 100,
@@ -261,8 +360,11 @@
         },
         description: '菱形'
     });
-    stencil.load([r, c], 'simple');
-    stencil.load([diamond, triangle], 'other');
+    stencil.load([data1, data2, data3, data4], 'data');
+    stencil.load([feature1, feature2, feature3, feature4], 'feature');
+    stencil.load([algorithm1, algorithm2, algorithm3, algorithm4], 'algorithm');
+    stencil.load([model1, model2, model3, model4], 'model');
+    stencil.load([chart1, chart2, chart3, chart4], 'chart');
     stencil.on('filter', function (graph, group) {
         console.log(graph, group);
     });
@@ -356,7 +458,7 @@
         tools: ['zoomIn', 'zoomOut', 'zoomToFit', 'zoomSlider', 'undo', 'redo', {
             type: 'button',
             name: 'layout',
-            text: 'Layout'
+            text: 'layout'
         }],
         references: {
             paperScroller: paperScroller,
@@ -374,6 +476,127 @@
         paperScroller.centerContent();
     });
     _toolbar.append(toolbar.render().el);
+
+    //属性栏
+    paper.on('element:pointerdown', function (cellView) {
+        joint.ui.Inspector.create('#inspector', {
+            cell: cellView.model,
+            inputs: {
+                attrs: {
+                    rect: {
+                        fill: {
+                            type: 'color-palette',
+                            options: [
+                                {content: '#ffb8c9'},
+                                {content: '#e2c8ff'},
+                                {content: '#c7eeff'},
+                                {content: '#d6ffc8'}
+                            ],
+                            label: 'Fill color',
+                            group: 'presentation',
+                            index: 1
+                        },
+                        stroke: {
+                            type: 'color-palette',
+                            options: [
+                                {content: '#ff0061'},
+                                {content: '#9300ff'},
+                                {content: '#0092ff'},
+                                {content: '#6dff00'}
+                            ],
+                            label: 'Outline color',
+                            group: 'presentation',
+                            index: 2
+                        },
+                        'stroke-width': {
+                            type: 'range',
+                            min: 0,
+                            max: 50,
+                            unit: 'px',
+                            label: 'Outline thickness',
+                            group: 'presentation',
+                            index: 3
+                        }
+                    },
+                    text: {
+                        text: {
+                            type: 'textarea',
+                            label: 'Text',
+                            group: 'text',
+                            index: 1
+                        },
+                        'font-size': {
+                            type: 'range',
+                            min: 5,
+                            max: 30,
+                            label: 'Font size',
+                            group: 'text',
+                            index: 2
+                        },
+                        'font-family': {
+                            type: 'select',
+                            options: ['Arial', 'Times New Roman', 'Courier New'],
+                            label: 'Font family',
+                            group: 'text',
+                            index: 3
+                        }
+                    }
+                },
+                data: {
+                    apple: {
+                        type: 'range',
+                        min: 0,
+                        max: 50,
+                        unit: 'px',
+                        label: 'Apple',
+                        group: 'data',
+                        index: 1
+                    },
+                    banana: {
+                        type: 'range',
+                        min: 0,
+                        max: 50,
+                        unit: 'px',
+                        label: 'Banana',
+                        group: 'data',
+                        index: 2
+                    },
+                    cat: {
+                        type: 'range',
+                        min: 0,
+                        max: 50,
+                        unit: 'px',
+                        label: 'Cat',
+                        group: 'data',
+                        index: 3
+                    },
+                    dog: {
+                        type: 'range',
+                        min: 0,
+                        max: 50,
+                        unit: 'px',
+                        label: 'Dog',
+                        group: 'data',
+                        index: 4
+                    }
+                }
+            },
+            groups: {
+                presentation: {
+                    label: 'Presentation',
+                    index: 1
+                },
+                text: {
+                    label: 'Text',
+                    index: 2
+                },
+                data: {
+                    label: 'Data',
+                    index: 3
+                }
+            }
+        });
+    });
 
     //流程追踪
     paper.on('cell:pointerdown', function (cellView) {
@@ -443,6 +666,8 @@
                     if (modelId !== '0') {
                         var params = 'selectById&$&' + modelId;
                         ws.send(params);
+                    } else {
+                        graph.clear();
                     }
                 });
 
