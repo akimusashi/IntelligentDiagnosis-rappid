@@ -137,18 +137,19 @@
             connector: {
                 name: 'rounded'
             },*/
+            smooth: true,
             attrs: {
                 '.connection': {stroke: 'blue'},
                 '.marker-source': {fill: 'yellow', d: 'M 2 5 A 4 4 0 0 0 10 5 A 4 4 0 0 0 2 5'},
                 '.marker-target': {fill: 'red', d: 'M 10 1 L 0 5 L 10 9 z'}
             }
-        }),
+        })/*,
         defaultRouter: {
             name: 'manhattan'
         },
         defaultConnector: {
             name: 'rounded'
-        }
+        }*/
     });
 
     //工具板
@@ -158,7 +159,7 @@
         width: 200,
         height: 200,
         groups: {
-            data: {
+            /*data: {
                 label: '数据',
                 index: 1,
                 closed: true
@@ -182,6 +183,11 @@
                 label: '图表',
                 index: 5,
                 closed: true
+            }*/
+            select: {
+                label: '选择',
+                index: 1,
+                closed: false
             }
         },
         search: {
@@ -215,11 +221,27 @@
         },
         description: '矩形'
     });
+
     var r1 = r.clone(), r2 = r.clone(), r3 = r.clone(), r4 = r.clone();
     r1.position(10, 10);
     r2.position(100, 10);
     r3.position(10, 60);
     r4.position(100, 60);
+
+    var r11 = r1.clone(), r12 = r2.clone(), r13 = r3.clone();
+    r11.attributes.description = 'input,输入数据';
+    r11.attr({
+        text: {text: 'input'}
+    });
+    r12.attributes.description = 'algo,算法';
+    r12.attr({
+        text: {text: 'algo'}
+    });
+    r13.attributes.description = 'accuracy,评估模型';
+    r13.attr({
+        text: {text: 'accuracy'}
+    });
+
     var data1 = r1.clone(), data2 = r2.clone(), data3 = r3.clone(), data4 = r4.clone();
     data1.attr({
         text: {text: 'data1'}
@@ -360,13 +382,14 @@
         },
         description: '菱形'
     });
-    stencil.load([data1, data2, data3, data4], 'data');
+    /*stencil.load([data1, data2, data3, data4], 'data');
     stencil.load([feature1, feature2, feature3, feature4], 'feature');
     stencil.load([algorithm1, algorithm2, algorithm3, algorithm4], 'algorithm');
     stencil.load([model1, model2, model3, model4], 'model');
-    stencil.load([chart1, chart2, chart3, chart4], 'chart');
+    stencil.load([chart1, chart2, chart3, chart4], 'chart');*/
+    stencil.load([r11, r12, r13], 'select');
     stencil.on('filter', function (graph, group) {
-        console.log(graph, group);
+        /*console.log(graph, group);*/
     });
 
     //辅助线
@@ -379,9 +402,31 @@
     paper.on('cell:pointerup', function (cellView, evt) {
         if (cellView.model instanceof joint.dia.Link) return;
 
-        var data = cellView.model.attributes.data;
+        var attributes = cellView.model.attributes;
+        var data = attributes.data;
         if (data) {
-            data = JSON.stringify(data).replace(/,["']/g, ' ').replace(/["']:/g, ': ').replace(/{["']|}/g, '');
+            /*data = JSON.stringify(data).replace(/,["']/g, ' ').replace(/["']:/g, ': ').replace(/{["']|}/g, '');*/
+
+            var kind = attributes.description.split(',', 1)[0];
+            if (kind === 'input') {
+                var len = data.path.length;
+                if (len > 6) {
+                    data.path = '...' + data.path.slice(-6, len);
+                }
+                data = 'name: ' + data.name + ' path: ' + data.path;
+            } else if (kind === 'algo') {
+                var params = data.params;
+                var temp = '';
+                for (var index in params) {
+                    var object = params[index];
+                    for (var key in object) {
+                        temp += ' ' + key + ': ' + object[key];
+                    }
+                }
+                data = 'name: ' + data.name + temp;
+            } else {
+                data = 'name: ' + data.name;
+            }
         }
 
         if (!(evt.ctrlKey || evt.metaKey)) {
@@ -442,12 +487,37 @@
 
     //绑定参数
     graph.on('add', function (cell) {
-        cell.attributes.data = {
+        if (cell instanceof joint.dia.Element) {
+            var kind = cell.attributes.description.split(',', 1)[0];
+            if (kind === 'input') {
+                cell.attributes.data = {
+                    name: '文件名',
+                    path: '文件路径'
+                };
+            } else if (kind === 'algo') {
+                cell.attributes.data = {
+                    name: '算法1',
+                    params: [
+                        {
+                            key1: 1
+                        },
+                        {
+                            key2: 2
+                        }
+                    ]
+                };
+            } else {
+                cell.attributes.data = {
+                    name: '模型1'
+                };
+            }
+        }
+        /*cell.attributes.data = {
             apple: 1,
             banana: 2,
             cat: 3,
             dog: 4
-        };
+        };*/
     });
 
     //工具条
@@ -479,6 +549,68 @@
 
     //属性栏
     paper.on('element:pointerdown', function (cellView) {
+        var kind = cellView.model.attributes.description.split(',', 1)[0];
+        var data;
+        if (kind === 'input') {
+            data = {
+                name: {
+                    type: 'text',
+                    label: '文件名',
+                    group: 'data',
+                    index: 1
+                },
+                path: {
+                    type: 'text',
+                    label: '文件路径',
+                    group: 'data',
+                    index: 2
+                }
+            };
+        } else if (kind === 'algo') {
+            data = {
+                name: {
+                    type: 'select',
+                    options: ['算法1', '算法2', '算法3'],
+                    label: '算法名',
+                    group: 'data',
+                    index: 1
+                },
+                params: [
+                    {
+                        key1: {
+                            type: 'range',
+                            min: 0,
+                            max: 50,
+                            unit: '单位',
+                            label: '参数1',
+                            group: 'data',
+                            index: 2
+                        }
+                    },
+                    {
+                        key2: {
+                            type: 'range',
+                            min: 0,
+                            max: 50,
+                            unit: '单位',
+                            label: '参数2',
+                            group: 'data',
+                            index: 3
+                        }
+                    }
+                ]
+            };
+        } else {
+            data = {
+                name: {
+                    type: 'select',
+                    options: ['模型1', '模型2', '模型3'],
+                    label: '评估模型名',
+                    group: 'data',
+                    index: 1
+                }
+            };
+        }
         joint.ui.Inspector.create('#inspector', {
             cell: cellView.model,
             inputs: {
@@ -542,7 +674,8 @@
                         }
                     }
                 },
-                data: {
+                data: data
+                /*{
                     apple: {
                         type: 'range',
                         min: 0,
@@ -579,7 +712,7 @@
                         group: 'data',
                         index: 4
                     }
-                }
+                }*/
             },
             groups: {
                 presentation: {
@@ -588,7 +721,8 @@
                 },
                 text: {
                     label: 'Text',
-                    index: 2
+                    index: 2,
+                    closed: true
                 },
                 data: {
                     label: 'Data',
