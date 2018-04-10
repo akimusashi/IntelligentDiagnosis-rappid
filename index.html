@@ -840,6 +840,10 @@
                 } else if (msg.type === 'model_id') {
                     var model_graph = msg.data[0].model_graph;
                     graph.fromJSON(JSON.parse(model_graph));
+                    var linkArray = graph.getLinks();
+                    for (var j = 0, length = linkArray.length; j < length; j++) {
+                        linkArray[j].set('smooth', true);
+                    }
                 } else if (msg.type === 'model_add') {
                     if (msg.data.affectedRows === 1) {
                         appendOption(msg.data.insertId, modelName);
