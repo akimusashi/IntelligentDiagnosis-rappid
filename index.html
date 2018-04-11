@@ -743,9 +743,11 @@
 
             var targetCell = graph.getCell(cell.get('target').id);
 
-            paper.findViewByModel(cell).sendToken(V('circle', {r: 7, fill: 'green'}).node, 1000, function () {
-                targetCell.trigger('signal', targetCell);
-            });
+            if (targetCell) {
+                paper.findViewByModel(cell).sendToken(V('circle', {r: 7, fill: 'green'}).node, 1000, function () {
+                    targetCell.trigger('signal', targetCell);
+                });
+            }
 
         } else {
 
